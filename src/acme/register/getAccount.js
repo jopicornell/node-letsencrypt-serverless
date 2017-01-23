@@ -1,17 +1,16 @@
-const config = require('../../../config/default.json')
-const readFile = require('../../aws/s3/readFile')
-const createAccount = require('./createAccount')
+const readFile = require('../../aws/s3/readFile');
+const createAccount = require('./createAccount');
 
-const getAccount = (regUrl) =>
+const getAccount = (regUrl, email, directoryUrl, S3AccountBucket, S3Folder, accountFile) =>
   readFile(
-    config['s3-account-bucket'],
-    config['s3-folder'],
-    config['acme-account-file']
+    S3AccountBucket,
+    S3Folder,
+    accountFile,
   )
-  .then((data) => JSON.parse(data.Body.toString()))
+  .then(data => JSON.parse(data.Body.toString()))
   .catch(() => {
-    console.log(`Creating user config file since couldn't read s3://${config['s3-account-bucket']}/${config['s3-folder']}/${config['acme-account-file']}`)
-    return createAccount(regUrl)
-  })
+    console.log(`Creating user config file since couldn't read s3://${S3AccountBucket}/${S3Folder}/${accountFile}`);
+    return createAccount(regUrl, email, directoryUrl, S3AccountBucket, S3Folder, accountFile);
+  });
 
-module.exports = getAccount
+module.exports = getAccount;

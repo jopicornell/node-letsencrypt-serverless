@@ -1,25 +1,25 @@
-const sendSignedRequest = require('../sendSignedRequest')
-const updateDNSChallenge = require('./updateDNSChallenge')
-const sendDNSChallengeValidation = require('./sendDNSChallengeValidation')
+const sendSignedRequest = require('../sendSignedRequest');
+const updateDNSChallenge = require('./updateDNSChallenge');
+const sendDNSChallengeValidation = require('./sendDNSChallengeValidation');
 
-const getDNSChallenge = (challenges) => challenges.find((challenge) => challenge.type === 'dns-01')
+const getDNSChallenge = challenges => challenges.find(challenge => challenge.type === 'dns-01');
 
 const validateChallenges = (domain, accountKeyPair, challengeResponse) => {
-  const dnsChallenge = getDNSChallenge(challengeResponse.challenges)
+  const dnsChallenge = getDNSChallenge(challengeResponse.challenges);
   return Promise.all([
     updateDNSChallenge(domain, dnsChallenge, accountKeyPair)
-    .then(() => sendDNSChallengeValidation(dnsChallenge, accountKeyPair))
-  ])
-}
+    .then(() => sendDNSChallengeValidation(dnsChallenge, accountKeyPair)),
+  ]);
+};
 
-const getChallenges = (domain, keypair, authzUrl) =>
+const getChallenges = (domain, keypair, authzUrl, acmeDirectoryUrl) =>
   sendSignedRequest({
     resource: 'new-authz',
     identifier: {
       type: 'dns',
-      value: domain
-    }
-  }, keypair, authzUrl)
-  .then((data) => validateChallenges(domain, keypair, data.body))
+      value: domain,
+    },
+  }, keypair, authzUrl, acmeDirectoryUrl)
+  .then(data => validateChallenges(domain, keypair, data.body));
 
-module.exports = getChallenges
+module.exports = getChallenges;

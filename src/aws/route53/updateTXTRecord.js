@@ -1,4 +1,4 @@
-const getRoute53 = require('../sdk/getRoute53')
+const getRoute53 = require('../sdk/getRoute53');
 
 const updateTXTRecord = (hostedZoneId, domain, digest) => {
   const toSend = {
@@ -9,19 +9,19 @@ const updateTXTRecord = (hostedZoneId, domain, digest) => {
           ResourceRecordSet: {
             Name: `_acme-challenge.${domain}`,
             Type: 'TXT',
-            ResourceRecords: [ { Value: JSON.stringify(digest) } ],
-            TTL: 1
-          }
-        }
+            ResourceRecords: [{ Value: JSON.stringify(digest) }],
+            TTL: 1,
+          },
+        },
       ],
-      Comment: 'This value is a computed digest of the token received from the LetsEncrypt challenge.'
+      Comment: 'This value is a computed digest of the token received from the LetsEncrypt challenge.',
     },
-    HostedZoneId: hostedZoneId
-  }
+    HostedZoneId: hostedZoneId,
+  };
   return getRoute53().changeResourceRecordSets(toSend).promise()
   .catch((e) => {
-    console.log(`Couldn't write TXT record _acme-challenge.${domain}`)
-    throw e
-  })
-}
-module.exports = updateTXTRecord
+    console.log(`Couldn't write TXT record _acme-challenge.${domain}`);
+    throw e;
+  });
+};
+module.exports = updateTXTRecord;

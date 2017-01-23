@@ -1,48 +1,52 @@
-const sendSignedRequest = require('../sendSignedRequest')
+const sendSignedRequest = require('../sendSignedRequest');
 
 const toAgreement = (links) => {
-  const match = /.*<(.*)>;rel="terms-of-service".*/.exec(links)
-  return (Array.isArray(match) ? {agreement: match[1]} : {})
-}
+  const match = /.*<(.*)>;rel="terms-of-service".*/.exec(links);
+  return (Array.isArray(match) ? { agreement: match[1] } : {});
+};
 
-const sendRefresh = (registration) =>
+const sendRefresh = registration =>
   sendSignedRequest({
     resource: 'reg',
-    agreement: registration.agreement
-  }, registration.keypair, registration.location)
+    agreement: registration.agreement,
+  }, registration.keypair, registration.location, registration.acmeDirectoryUrl);
 
-const checkRefresh = (registration) => (data) => {
-  const refreshedAgreement = toAgreement(data.header['link'])
+const refreshRegistration = registration =>
+  sendRefresh(registration)
+  .then(data => ({ data, registration }));
+
+const checkRefresh = (registration, data) => {
+  const refreshedAgreement = toAgreement(data.header.link);
   return ((registration.agreement !== refreshedAgreement.agreement)
     ? refreshRegistration({
       keypair: registration.keypair,
       location: registration.location,
-      agreement: refreshedAgreement.agreement
+      agreement: refreshedAgreement.agreement,
+      acmeDirectoryUrl: registration.acmeDirectoryUrl,
     })
+    .then(payload => checkRefresh(payload.registration, payload.data))
     : Promise.resolve({
       keypair: registration.keypair,
       location: registration.location,
-      agreement: registration.agreement
-    }))
-}
+      agreement: registration.agreement,
+      acmeDirectoryUrl: registration.acmeDirectoryUrl,
+    }));
+};
 
-const refreshRegistration = (registration) =>
-  sendRefresh(registration)
-  .then(checkRefresh(registration))
-
-const register = (regUrl, email) => (keypair) =>
+const register = (regUrl, email, acmeDirectoryUrl) => keypair =>
   sendSignedRequest({
     resource: 'new-reg',
-    contact: [ `mailto:${email}` ]
-  }, keypair, regUrl)
-  .then((data) =>
+    contact: [`mailto:${email}`],
+  }, keypair, regUrl, acmeDirectoryUrl)
+  .then(data =>
     refreshRegistration(
       Object.assign({
-        keypair: keypair,
-        location: data.header['location']
+        keypair,
+        location: data.header.location,
+        acmeDirectoryUrl,
       },
-      toAgreement(data.header['link']))
-    )
-  )
+      toAgreement(data.header.link)),
+    ),
+  );
 
-module.exports = register
+module.exports = register;
